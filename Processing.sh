@@ -193,16 +193,19 @@ n
 #	- bedtools
 #	- R, R packages (rtracklayer)
 # Input files:
-#	- ./Homo_sapiens.GRCh38.cdna.all.fa.gz - read counts file
-#	- ./Fastq_trimmed/*.trim.fastq.gz - trimmed fastq files
+#	./DEGset.txt - set of differentialy expressed genes for certain comparsion (up or down) (Ensembl ID)
+# Input files:
+#	./extended_promoter_region.fa - promoter sequences, -2000 +2000 from TSS
+#	./ocr.bed - masked extended promoter sequences, only open chromatin region
+#	./Promoter_annotation.txt - annotation of TSS & promoters for human skeletal muscle
 # Output files:
-#	- ./Fastq_trimmed/TPM_by_gene.txt - calculated TPM for all genes
-promoters=read.table('/media/maxpauel/01B5FA3D077CA3E9/CAGE_2022/INT2000/exp/open_chr/cut_open_chr/key_files/PWM/ocr_mask1.bed')
-ann_promoters=read.table('/media/maxpauel/01B5FA3D077CA3E9/CAGE_2022/INT2000/exp/open_chr/cut_open_chr/key_files/DE_prom/DEP4_ann.txt',header=T)
+#	- ./DEGset.fa -  open chromatin promoter sequences for differentialy expressed genes
+promoters=read.table('ocr.bed')
+ann_promoters=read.table('Promoter_annotation.txt',header=T)
 ann_promoters2=ann_promoters[,c('Row.names','Ensembl_id','Gene_name')]
 b=merge(ann_promoters2,promoters,by.x='Row.names',by.y='V1')
 write.table(merge(read.table('DEGset.txt'),b,by.x='V1',by.y='Ensembl_id')[,c(2,4,5,1)],'DEGset.bed',row.names=F,col.names=F,sep='\t',quote=F)
-ls ./bed/*.bed| xargs  -ISMPL bash -c "bedtools getfasta -fi /media/maxpauel/01B5FA3D077CA3E9/Coexpression_8week_2/new/fasta/2000fa.promN.fa -fo SMPL.fa -bed SMPL"
+ls ./bed/*.bed| xargs  -ISMPL bash -c "bedtools getfasta -fi ./extended_promoter_region.fa -fo SMPL.fa -bed SMPL"
 
 		# STEP 7 - PPI NETWORK CONSTRUCTION
 # Tools:
