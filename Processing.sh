@@ -186,5 +186,7 @@ write.table(merge(read.table('DEGset.txt'),b,by.x='V1',by.y='Ensembl_id')[,c(2,4
 ls ./bed/*.bed| xargs  -ISMPL bash -c "bedtools getfasta -fi /media/maxpauel/01B5FA3D077CA3E9/Coexpression_8week_2/new/fasta/2000fa.promN.fa -fo SMPL.fa -bed SMPL"
 
 		# STEP 7 - PPI NETWORK CONSTRUCTION
-# Input gene sets (DEGs+Insulin patway related genes+predicted TFs) - 
-# Interaction networks - 'Pathway', 'Physical interactions'
+# Tools:
+#	- Cytoscape, GeneMania app
+# GeneMania Interaction networks - 'Pathway', 'Physical interactions' (H. sapiens set, version - 2021-04-29)
+# Input gene sets (DEGs+Insulin patway related genes+predicted TFs) - Healthy.txt, Obesity.txt, T2D.txt
