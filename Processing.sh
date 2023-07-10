@@ -147,7 +147,7 @@ n
 #	- kallisto
 #	- R, R packages (rtracklayer)
 # Input files:
-#	- ./Homo_sapiens.GRCh38.cdna.all.fa.gz - read counts file
+#	- ./Homo_sapiens.GRCh38.cdna.all.fa.gz -  - cDNA fasta file, source - https://ftp.ensembl.org/pub/release-109/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz
 #	- ./Fastq_trimmed/*.trim.fastq.gz - trimmed fastq files
 # Output files:
 #	- ./Fastq_trimmed/TPM_by_gene.txt - calculated TPM for all genes
@@ -200,12 +200,19 @@ n
 #	./Promoter_annotation.txt - annotation of TSS & promoters for human skeletal muscle
 # Output files:
 #	- ./DEGset.fa -  open chromatin promoter sequences for differentialy expressed genes
+mkdir ./bed
+R
 promoters=read.table('ocr.bed')
 ann_promoters=read.table('Promoter_annotation.txt',header=T)
 ann_promoters2=ann_promoters[,c('Row.names','Ensembl_id','Gene_name')]
 b=merge(ann_promoters2,promoters,by.x='Row.names',by.y='V1')
-write.table(merge(read.table('DEGset.txt'),b,by.x='V1',by.y='Ensembl_id')[,c(2,4,5,1)],'DEGset.bed',row.names=F,col.names=F,sep='\t',quote=F)
+write.table(merge(read.table('DEGset.txt'),b,by.x='V1',by.y='Ensembl_id')[,c(2,4,5,1)],'./bed/DEGset.bed',row.names=F,col.names=F,sep='\t',quote=F)
+q()
+n
 ls ./bed/*.bed| xargs  -ISMPL bash -c "bedtools getfasta -fi ./extended_promoter_region.fa -fo SMPL.fa -bed SMPL"
+
+
+
 
 		# STEP 7 - PPI NETWORK CONSTRUCTION
 # Tools:
