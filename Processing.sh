@@ -33,6 +33,7 @@ java -jar /usr/share/java/trimmomatic.jar SE -threads 8 $i $res_file ILLUMINACLI
 # Output files:
 #	- ./bam/*.sorted.bam - sorted bam files
 
+mkdir ./bam
 # build genome index
 hisat2-build ./Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz ./hisat2_index/Homo_sapiens.GRCh38.dna.primary_assembly
 # generate splice sites txt
@@ -58,10 +59,10 @@ rm ${res_file%.sam*}.bam;
 # Tools:
 #	- R, R packages (Rsubread)
 # Input files:
-#	  - ./bam/*.sorted.bam - sorted bam files
+#	- ./bam/*.sorted.bam - sorted bam files
 # 	- ./Homo_sapiens.GRCh38.101.gtf - genome annotation file, source -  https://ftp.ensembl.org/pub/release-101/gtf/homo_sapiens/Homo_sapiens.GRCh38.101.gtf.gz
 # Output files:
-#	- ./bam/counts.txt - read count file
+#	- ./bam/counts.txt - read counts file
 
 ls ./bam/*.sorted.bam >./bam/bam_list.txt
 R
@@ -82,11 +83,12 @@ n
 
 		# STEP 4 - DIFFERENTIAL GENE EXPRESSION
 # Tools: 
-#	- R, R packages (DESeq2)
+#	- R, R packages (DESeq2, rtracklayer)
 # Input files:
-
+#	- ./bam/counts.txt - read counts file
+#	- ./design.txt - experiment design file
 # Output files:
-
+#	- ./bam/DEG_analysis.txt - Differntial expression analysis for each comparsion
 
 R
 library(DESeq2)
@@ -97,11 +99,11 @@ cts_basal=cts1[,c(TRUE,FALSE)]
 design_basal=design1[c(TRUE,FALSE),]
 dds <- DESeqDataSetFromMatrix(countData = cts_g,
                               colData = coldata,
-                              design = ~ con_group1)
+                              design = ~ group)
 dds1 <- DESeq(dds)
-res1_basal=results(dds1,contrast=c('con_group1','Ob','H'))
-res2_basal=results(dds1,contrast=c('con_group1','T2d','H'))
-res3_basal=results(dds1,contrast=c('con_group1','T2d','Ob'))
+res1_basal=results(dds1,contrast=c('group','Ob','H'))
+res2_basal=results(dds1,contrast=c('group','T2d','H'))
+res3_basal=results(dds1,contrast=c('group','T2d','Ob'))
 res_basal=cbind(res1[,c(2,6)],res2[,c(2,6)],res3[,c(2,6)])
 colnames(res_basal)=c('LFC_ObH','Padj_ObH','LFC_T2dH','Padj_T2dH','LFC_T2dOb','Padj_T2dOb')
 
@@ -114,21 +116,21 @@ design_ob=design[29:42,]
 coldata=design_t2d
 dds <- DESeqDataSetFromMatrix(countData = cts_t2d,
                               colData = coldata,
-                              design = ~ person+group)
+                              design = ~ person+mmt)
 dds1 <- DESeq(dds)
-res1=results(dds1,contrast=c('group','Post','Pre'))
+res1=results(dds1,contrast=c('mmt','Post','Pre'))
 coldata=design_h
 dds <- DESeqDataSetFromMatrix(countData = cts_h,
                               colData = coldata,
-                              design = ~ person+group)
+                              design = ~ person+mmt)
 dds2 <- DESeq(dds)
-res2=results(dds2,contrast=c('group','Post','Pre'))
+res2=results(dds2,contrast=c('mmt','Post','Pre'))
 coldata=design_ob
 dds <- DESeqDataSetFromMatrix(countData = cts_ob,
                               colData = coldata,
-                              design = ~ person+group)
+                              design = ~ person+mmt)
 dds3 <- DESeq(dds)
-res3=results(dds3,contrast=c('group','Post','Pre'))
+res3=results(dds3,contrast=c('mmt','Post','Pre'))
 resMMT=cbind(res1[,c(2,6)],res2[,c(2,6)],res3[,c(2,6)])
 colnames(resMMT)=c('LFC_T2d','Padj_T2d','LFC_H','Padj_H','LFC_Ob','Padj_Ob')
 results=cbind(res_basal,resMMT)
@@ -141,6 +143,15 @@ q()
 n
 
 		# STEP 5 - TPM CALCULATION
+# Tools:
+#	- kallisto
+#	- R, R packages (rtracklayer)
+# Input files:
+#	- ./Homo_sapiens.GRCh38.cdna.all.fa.gz - read counts file
+#	- ./Fastq_trimmed/*.trim.fastq.gz - trimmed fastq files
+# Output files:
+#	- ./Fastq_trimmed/TPM_by_gene.txt - calculated TPM for all genes
+
 kallisto index -i ./Fastq_trimmed/transcripts.idx ./Homo_sapiens.GRCh38.cdna.all.fa.gz
 path_in='./Fastq_trimmed'
 for i in $path_in/*.trim.fastq.gz; do {
@@ -178,6 +189,14 @@ q()
 n
 
 		# STEP 6 - TFBS ENRICHMENT ANALYSIS
+# Tools:
+#	- bedtools
+#	- R, R packages (rtracklayer)
+# Input files:
+#	- ./Homo_sapiens.GRCh38.cdna.all.fa.gz - read counts file
+#	- ./Fastq_trimmed/*.trim.fastq.gz - trimmed fastq files
+# Output files:
+#	- ./Fastq_trimmed/TPM_by_gene.txt - calculated TPM for all genes
 promoters=read.table('/media/maxpauel/01B5FA3D077CA3E9/CAGE_2022/INT2000/exp/open_chr/cut_open_chr/key_files/PWM/ocr_mask1.bed')
 ann_promoters=read.table('/media/maxpauel/01B5FA3D077CA3E9/CAGE_2022/INT2000/exp/open_chr/cut_open_chr/key_files/DE_prom/DEP4_ann.txt',header=T)
 ann_promoters2=ann_promoters[,c('Row.names','Ensembl_id','Gene_name')]
