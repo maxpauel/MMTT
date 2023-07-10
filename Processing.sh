@@ -191,7 +191,8 @@ n
 		# STEP 6 - TFBS ENRICHMENT ANALYSIS
 # Tools:
 #	- bedtools
-#	- R, R packages (rtracklayer)
+#	- R
+#	- GeneXplain platform - https://platform.genexplain.com/
 # Input files:
 #	./DEGset.txt - set of differentialy expressed genes for certain comparsion (up or down) (Ensembl ID)
 # Input files:
@@ -200,6 +201,8 @@ n
 #	./Promoter_annotation.txt - annotation of TSS & promoters for human skeletal muscle
 # Output files:
 #	- ./DEGset.fa -  open chromatin promoter sequences for differentialy expressed genes
+#	- ./TFBS_enrichment/*.Enriched_motifs.txt - TFBS enrichment table for each DEG set
+
 mkdir ./bed
 R
 promoters=read.table('ocr.bed')
@@ -210,7 +213,14 @@ write.table(merge(read.table('DEGset.txt'),b,by.x='V1',by.y='Ensembl_id')[,c(2,4
 q()
 n
 ls ./bed/*.bed| xargs  -ISMPL bash -c "bedtools getfasta -fi ./extended_promoter_region.fa -fo SMPL.fa -bed SMPL"
-
+########################  TFBS enrichment on GeneXplain platform ########################
+#	Tool:analyses->methods->Site analysis->Search for enriched TFBS (tracks)	#
+#		Options: Yes set - DEGset.fa						#
+#			 No set - reference.bed						#
+#			 Sequence source - Ensembl 104.38 Human (hg38)			#
+#			 Input motif profile - TRANSFAC(R)2022.1 vertebrate_human_p0.001#
+#			 Cutoff - 0.05							#
+#########################################################################################
 
 
 
