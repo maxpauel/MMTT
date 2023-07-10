@@ -141,14 +141,14 @@ q()
 n
 
 		# STEP 5 - TPM CALCULATION
+kallisto index -i ./Fastq_trimmed/transcripts.idx ./Homo_sapiens.GRCh38.cdna.all.fa.gz
 path_in='./Fastq_trimmed'
-path_out='./Fastq_trimmed'
 for i in $path_in/*.trim.fastq.gz; do {
 mkdir ${i%.trim.fastq*}
 kallisto quant \
 --rf-stranded \
 -b 0 \
--i /media/maxpauel/01B5FA3D077CA3E9/Dry_immersion/Kallisto/transcripts.idx \
+-i ./Fastq_trimmed/transcripts.idx \
 -o ${i%.trim.fastq*} \
 --single  \
 -l 200  \
@@ -156,16 +156,35 @@ kallisto quant \
 -t 8 \
 $i;
 } ; done
-
-
+cd ./Fastq_trimmed/
+ls -d */ > tpm_folder_list.txt
+sed -n 's/$/abundance.tsv/' tpm_folder_list.txt > tpm_file_list.txt
 
 R
-txt=readLines('/media/maxpauel/01B5FA3D077CA3E9/Diabetus/Fastq_trim/files.txt')
+library(rtracklayer)
+txt=readLines('./Fastq_trimmed/tpm_file_list.txt')
 datalist = lapply(txt, function(x)read.table(x, header=T)) 
 datafr = do.call("cbind", datalist)
 rownames(datafr)=datafr$target_id
 data=datafr[,c(FALSE,FALSE,FALSE,FALSE,TRUE)]
-write.table(data,'/media/maxpauel/01B5FA3D077CA3E9/Diabetus/TPM/TPM.txt',quote=F,sep='\t',row.names=T)
+TPM=cbind(rownames(data),data)
+colnames(TPM)[1]='transcript_id'
+gtf=readGFF('./Homo_sapiens.GRCh38.101.gtf')
+tr=unique(gtf[gtf$type=='transcript',c(9,11,13,14,15)])
+trTPM=merge(tr,TPM,by='transcript_id')
+geneTPM=aggregate(ntt[,7:ncol(ntt)],by=list(ntt$gene_id), sum)
+write.table(geneTPM,'./Fastq_trimmed/TPM_by_gene.txt',quote=F,sep='\t',row.names=F)
+q()
+n
 
+		# STEP 6 - TFBS ENRICHMENT ANALYSIS
+promoters=read.table('/media/maxpauel/01B5FA3D077CA3E9/CAGE_2022/INT2000/exp/open_chr/cut_open_chr/key_files/PWM/ocr_mask1.bed')
+ann_promoters=read.table('/media/maxpauel/01B5FA3D077CA3E9/CAGE_2022/INT2000/exp/open_chr/cut_open_chr/key_files/DE_prom/DEP4_ann.txt',header=T)
+ann_promoters2=ann_promoters[,c('Row.names','Ensembl_id','Gene_name')]
+b=merge(ann_promoters2,promoters,by.x='Row.names',by.y='V1')
+write.table(merge(read.table('DEGset.txt'),b,by.x='V1',by.y='Ensembl_id')[,c(2,4,5,1)],'DEGset.bed',row.names=F,col.names=F,sep='\t',quote=F)
+ls ./bed/*.bed| xargs  -ISMPL bash -c "bedtools getfasta -fi /media/maxpauel/01B5FA3D077CA3E9/Coexpression_8week_2/new/fasta/2000fa.promN.fa -fo SMPL.fa -bed SMPL"
 
-
+		# STEP 7 - PPI NETWORK CONSTRUCTION
+# Input gene sets (DEGs+Insulin patway related genes+predicted TFs) - 
+# Interaction networks - 'Pathway', 'Physical interactions'
