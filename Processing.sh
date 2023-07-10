@@ -141,8 +141,8 @@ q()
 n
 
 		# STEP 5 - TPM CALCULATION
-path_in='./Fastq_trimmed/'
-path_out='./TPM'
+path_in='./Fastq_trimmed'
+path_out='./Fastq_trimmed'
 for i in $path_in/*.trim.fastq.gz; do {
 mkdir ${i%.trim.fastq*}
 kallisto quant \
@@ -156,6 +156,8 @@ kallisto quant \
 -t 8 \
 $i;
 } ; done
+
+
 
 R
 txt=readLines('/media/maxpauel/01B5FA3D077CA3E9/Diabetus/Fastq_trim/files.txt')
