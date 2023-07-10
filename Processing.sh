@@ -134,13 +134,36 @@ colnames(resMMT)=c('LFC_T2d','Padj_T2d','LFC_H','Padj_H','LFC_Ob','Padj_Ob')
 results=cbind(res_basal,resMMT)
 
 gtf=readGFF('./Homo_sapiens.GRCh38.101.gtf')
+gtf=gtf[gtf$type=='gene',c(9,11,13)]
+DEG=merge(gtf,results,by.x='gene_id',by.y='row.names')
+write.table(DEG,'./bam/DEG_analysis.txt',quote=F,sep='\t',row.names=F)
+q()
+n
 
+		# STEP 5 - TPM CALCULATION
+path_in='./Fastq_trimmed/'
+path_out='./TPM'
+for i in $path_in/*.trim.fastq.gz; do {
+mkdir ${i%.trim.fastq*}
+kallisto quant \
+--rf-stranded \
+-b 0 \
+-i /media/maxpauel/01B5FA3D077CA3E9/Dry_immersion/Kallisto/transcripts.idx \
+-o ${i%.trim.fastq*} \
+--single  \
+-l 200  \
+-s 20  \
+-t 8 \
+$i;
+} ; done
 
+R
+txt=readLines('/media/maxpauel/01B5FA3D077CA3E9/Diabetus/Fastq_trim/files.txt')
+datalist = lapply(txt, function(x)read.table(x, header=T)) 
+datafr = do.call("cbind", datalist)
+rownames(datafr)=datafr$target_id
+data=datafr[,c(FALSE,FALSE,FALSE,FALSE,TRUE)]
+write.table(data,'/media/maxpauel/01B5FA3D077CA3E9/Diabetus/TPM/TPM.txt',quote=F,sep='\t',row.names=T)
 
-ref=n[n$type=='gene',c(9,11,13)]
-tpmg=merge(ref,gene,by.x='gene_id',by.y='Group.1',all.x=T)
-
-
-write.table(tpmg,'/media/maxpauel/01B5FA3D077CA3E9/Diabetus/TPM/TPM_by_gene.txt',quote=F,sep='\t',row.names=F)
 
 
